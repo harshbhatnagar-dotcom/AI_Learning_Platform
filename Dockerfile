@@ -1,50 +1,82 @@
 FROM python:3.12-slim
 
-# Prevent Python from buffering stdout
+# -----------------------------
+# Environment Variables
+# -----------------------------
 ENV PYTHONUNBUFFERED=1
 
-# Install system packages
+# -----------------------------
+# Install System Dependencies
+# -----------------------------
 RUN apt-get update && apt-get install -y \
     curl \
     wget \
     git \
+    zstd \
     tesseract-ocr \
     libgl1 \
     libglib2.0-0 \
     poppler-utils \
+    procps \
     && rm -rf /var/lib/apt/lists/*
 
+# -----------------------------
 # Install uv
-RUN pip install uv
+# -----------------------------
+RUN pip install --no-cache-dir uv
 
+# -----------------------------
 # Install Ollama
+# -----------------------------
 RUN curl -fsSL https://ollama.com/install.sh | sh
 
+# -----------------------------
+# Set Working Directory
+# -----------------------------
 WORKDIR /app
 
-# Copy dependency files first (better Docker layer caching)
-COPY pyproject.toml .
+# -----------------------------
+# Copy Dependency Files
+# -----------------------------
+COPY pyproject.toml ./
 COPY uv.lock* ./
 
-# Install Python dependencies
+# -----------------------------
+# Install Python Dependencies
+# -----------------------------
 RUN uv sync --frozen
 
-# Copy application
+# -----------------------------
+# Copy Application
+# -----------------------------
 COPY . .
 
-# Create required folders
+# -----------------------------
+# Create Required Directories
+# -----------------------------
 RUN mkdir -p uploads chroma_db
 
-# Download embedding model
+# -----------------------------
+# Download Ollama Model
+# (This becomes part of the image)
+# -----------------------------
 RUN ollama serve & \
-    sleep 10 && \
-    ollama pull qwen3-embedding:0.6b
+    sleep 8 && \
+    ollama pull qwen3-embedding:0.6b && \
+    pkill ollama
 
+# -----------------------------
+# Expose Ports
+# -----------------------------
 EXPOSE 8501
 EXPOSE 11434
 
-# Start Ollama and Streamlit
+# -----------------------------
+# Start Ollama + Streamlit
+# -----------------------------
 CMD sh -c "\
 ollama serve & \
 sleep 5 && \
-uv run streamlit run app.py --server.address=0.0.0.0 --server.port=8501"
+exec uv run streamlit run app.py \
+--server.address=0.0.0.0 \
+--server.port=${PORT:-8501}"
