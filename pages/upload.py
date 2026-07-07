@@ -21,18 +21,7 @@ st.write(
     "All uploaded files will be treated as a single knowledge base."
 )
 
-UPLOAD_FOLDER = "uploads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-def clear_uploads():
-    if not os.path.exists(UPLOAD_FOLDER):
-        return
-
-    for file in os.listdir(UPLOAD_FOLDER):
-        file_path = os.path.join(UPLOAD_FOLDER, file)
-
-        if os.path.isfile(file_path):
-            os.remove(file_path)
 
 uploaded_files = st.file_uploader(
     "Choose Documents",
@@ -49,24 +38,13 @@ if uploaded_files:
 
             # Start a fresh study session
             clear_db()
-            clear_uploads()
 
             combined_text = ""
             total_chunks = 0
 
             for uploaded_file in uploaded_files:
 
-                save_path = os.path.join(
-                    UPLOAD_FOLDER,
-                    uploaded_file.name
-                )
-
-                # Save file
-                with open(save_path, "wb") as f:
-                    f.write(uploaded_file.getbuffer())
-
-                # Extract text
-                text = extract_text(save_path)
+                text = extract_text(uploaded_file)
 
                 # Keep complete text for Summary page
                 combined_text += (

@@ -5,34 +5,65 @@ import pytesseract
 from PIL import Image
 import io
 
-def extract_pdf(pdf_path: str) -> str:
-    doc = fitz.open(pdf_path)
-    text = "\n".join(page.get_text() for page in doc).strip()
+
+def extract_pdf(uploaded_file):
+    """
+    Extract text from a PDF.
+    Falls back to OCR if no text is found.
+    """
+
+    uploaded_file.seek(0)
+
+    pdf_bytes = uploaded_file.read()
+
+    doc = fitz.open(
+        stream=pdf_bytes,
+        filetype="pdf"
+    )
+
+    text = ""
+
+    for page in doc:
+        text += page.get_text()
+
+    text = text.strip()
+
     if text:
         return text
 
     print("🔍 Running OCR (Tesseract fallback)...")
 
     ocr_text = []
-    for page in doc:
-        # Convert page to image
-        pix = page.get_pixmap(dpi=300)
-        img = Image.open(io.BytesIO(pix.tobytes("png")))
 
-        # Perform OCR
-        text = pytesseract.image_to_string(
+    for page in doc:
+
+        pix = page.get_pixmap(dpi=300)
+
+        img = Image.open(
+            io.BytesIO(
+                pix.tobytes("png")
+            )
+        )
+
+        extracted = pytesseract.image_to_string(
             img,
             lang="eng",
             config="--oem 3 --psm 6"
         )
 
-        ocr_text.append(text)
+        ocr_text.append(extracted)
 
     return "\n".join(ocr_text)
 
-def extract_docx(file_path):
-    """Extract text from DOCX."""
-    doc = Document(file_path)
+
+def extract_docx(uploaded_file):
+    """
+    Extract text from DOCX.
+    """
+
+    uploaded_file.seek(0)
+
+    doc = Document(uploaded_file)
 
     text = ""
 
@@ -42,36 +73,43 @@ def extract_docx(file_path):
     return text
 
 
-def extract_pptx(file_path):
-    """Extract text from PPTX."""
-    prs = Presentation(file_path)
+def extract_pptx(uploaded_file):
+    """
+    Extract text from PPTX.
+    """
+
+    uploaded_file.seek(0)
+
+    prs = Presentation(uploaded_file)
 
     text = ""
 
     for slide in prs.slides:
+
         for shape in slide.shapes:
+
             if hasattr(shape, "text"):
                 text += shape.text + "\n"
 
     return text
 
 
-def extract_text(file_path):
+def extract_text(uploaded_file):
     """
-    Automatically detect file type
+    Automatically detect the uploaded file type
     and extract text.
     """
 
-    file_path = file_path.lower()
+    filename = uploaded_file.name.lower()
 
-    if file_path.endswith(".pdf"):
-        return extract_pdf(file_path)
+    if filename.endswith(".pdf"):
+        return extract_pdf(uploaded_file)
 
-    elif file_path.endswith(".docx"):
-        return extract_docx(file_path)
+    elif filename.endswith(".docx"):
+        return extract_docx(uploaded_file)
 
-    elif file_path.endswith(".pptx"):
-        return extract_pptx(file_path)
+    elif filename.endswith(".pptx"):
+        return extract_pptx(uploaded_file)
 
     else:
         raise ValueError("Unsupported file format.")
