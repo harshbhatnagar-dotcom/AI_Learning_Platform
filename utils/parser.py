@@ -45,7 +45,7 @@ def mistral_ocr(uploaded_file):
         pages.append(page.markdown)
 
     # Optional: delete uploaded file from Mistral
-    client.files.delete(uploaded.id)
+    client.files.delete(file_id=uploaded.id)
 
     return "\n\n".join(pages)
 
