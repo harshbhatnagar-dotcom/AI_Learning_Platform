@@ -39,6 +39,7 @@ An AI-powered learning assistant that transforms study materials into interactiv
 
 ### OCR
 - Tesseract OCR
+- Mitral AI OCR
 
 ### Document Parsing
 - PyMuPDF

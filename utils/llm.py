@@ -13,7 +13,7 @@ groq=OpenAI(base_url=groq_url,api_key=groq_api_key)
 def llm(user_prompt,system_prompt,response_format=None):
     messages=[{"role":"system","content":system_prompt},{"role":"user","content":user_prompt}]
     if response_format is None:
-        response=groq.chat.completions.create(model="openai/gpt-oss-120b",messages=messages)
+        response=groq.chat.completions.create(model="llama-3.3-70b-versatile",messages=messages)
         return response.choices[0].message.content
     else:
         response = groq.beta.chat.completions.parse(
