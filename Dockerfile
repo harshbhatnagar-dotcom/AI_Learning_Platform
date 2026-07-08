@@ -9,9 +9,6 @@ ENV PYTHONUNBUFFERED=1
 # Install System Dependencies
 # -----------------------------
 RUN apt-get update && apt-get install -y \
-    curl \
-    wget \
-    git \
     tesseract-ocr \
     libgl1 \
     libglib2.0-0 \
@@ -24,37 +21,38 @@ RUN apt-get update && apt-get install -y \
 RUN pip install --no-cache-dir uv
 
 # -----------------------------
-# Set Working Directory
+# Working Directory
 # -----------------------------
 WORKDIR /app
 
 # -----------------------------
-# Copy Dependency Files
+# Copy dependency files
 # -----------------------------
 COPY pyproject.toml ./
 COPY uv.lock* ./
 
 # -----------------------------
-# Install Python Dependencies
+# Install dependencies into the
+# system Python (NOT a .venv)
 # -----------------------------
-RUN uv sync --frozen
+RUN uv sync --frozen --no-dev --system
 
 # -----------------------------
-# Copy Application
+# Copy application
 # -----------------------------
 COPY . .
 
 # -----------------------------
-# Create Required Directories
+# Create directories
 # -----------------------------
-RUN mkdir -p uploads chroma_db
+RUN mkdir -p chroma_db uploads
 
 # -----------------------------
-# Expose Streamlit Port
+# Expose Streamlit port
 # -----------------------------
 EXPOSE 8501
 
 # -----------------------------
 # Start Streamlit
 # -----------------------------
-CMD sh -c "uv run streamlit run app.py --server.address=0.0.0.0 --server.port=${PORT:-8501}"
+CMD ["streamlit", "run", "app.py", "--server.address=0.0.0.0", "--server.port=8501"]
